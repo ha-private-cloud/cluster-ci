@@ -78,6 +78,13 @@ see `../clusterkeep-ui/ci-rbac.tf` for the first example. This is
 deliberately each app repo's own responsibility, not centralized here, same
 convention `cluster-rbac` established for "who can touch this namespace."
 
+The deploy Job's `helm upgrade --namespace <target>` uses whatever
+`namespace` the caller passes to `POST /builds` (or `ci-cli build
+--namespace ...`) — it is **not** derived from the app name. If a caller
+passes a namespace with no matching `RoleBinding`, the deploy Job fails
+cleanly (Kubernetes RBAC denies the `helm upgrade`) rather than deploying
+somewhere unintended.
+
 The app's Helm chart must live at `charts/<app-name>/` inside the app repo
 (not published to Nexus's Helm-hosted repo type — not set up, and not worth
 it for a single app) — `ci-cli` uploads the whole app directory, chart

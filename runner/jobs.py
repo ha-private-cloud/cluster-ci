@@ -175,7 +175,7 @@ class JobRunner:
                                     build.app_name,
                                     chart_path,
                                     "--namespace",
-                                    build.app_name,
+                                    build.namespace,
                                     "--reuse-values",
                                     "--set",
                                     f"image.tag={build.tag}",

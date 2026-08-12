@@ -9,6 +9,7 @@ class Build:
     id: str
     app_name: str
     tag: str
+    namespace: str
     status: str = "queued"  # queued | running | succeeded | failed
     stage: Optional[str] = None  # testing | building | deploying
     error: Optional[str] = None
@@ -20,6 +21,7 @@ class Build:
             "build_id": self.id,
             "app": self.app_name,
             "tag": self.tag,
+            "namespace": self.namespace,
             "status": self.status,
             "stage": self.stage,
             "error": self.error,
@@ -44,8 +46,8 @@ class BuildQueue:
         for _ in range(self._max_concurrent):
             threading.Thread(target=self._worker, daemon=True).start()
 
-    def submit(self, build_id: str, app_name: str, tag: str) -> Build:
-        build = Build(id=build_id, app_name=app_name, tag=tag)
+    def submit(self, build_id: str, app_name: str, tag: str, namespace: str) -> Build:
+        build = Build(id=build_id, app_name=app_name, tag=tag, namespace=namespace)
         with self._lock:
             self._builds[build_id] = build
         self._pending.put(build)

@@ -42,10 +42,13 @@ def create_app() -> Flask:
     def create_build():
         app_name = request.form.get("app", "")
         tag = request.form.get("tag", "")
+        namespace = request.form.get("namespace", "")
         source = request.files.get("source")
 
         if not APP_NAME_RE.match(app_name):
             return jsonify({"error": "app must be a valid k8s name (lowercase alphanumeric/hyphens)"}), 400
+        if not APP_NAME_RE.match(namespace):
+            return jsonify({"error": "namespace must be a valid k8s name (lowercase alphanumeric/hyphens)"}), 400
         if not TAG_RE.match(tag):
             return jsonify({"error": "invalid tag"}), 400
         if source is None:
@@ -53,7 +56,7 @@ def create_app() -> Flask:
 
         build_id = uuid.uuid4().hex[:12]
         save_upload(build_id, source)
-        build = build_queue.submit(build_id=build_id, app_name=app_name, tag=tag)
+        build = build_queue.submit(build_id=build_id, app_name=app_name, tag=tag, namespace=namespace)
         return jsonify(build.to_dict()), 202
 
     @app.get("/builds/<build_id>")
