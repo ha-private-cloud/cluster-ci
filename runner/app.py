@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import uuid
 
 from flask import Flask, Response, jsonify, request, stream_with_context
@@ -75,6 +76,12 @@ def create_app() -> Flask:
         def generate():
             for line in job_runner.tail_logs(build):
                 yield f"data: {line}\n\n"
+            # Container logs finish streaming the instant the last container
+            # exits, but the Job controller marks job.status.succeeded/failed
+            # a beat later , without this wait, a client reading "done" here
+            # can still see status="running" and wrongly report failure.
+            while build.status not in ("succeeded", "failed"):
+                time.sleep(0.5)
             yield f"event: done\ndata: {build.status}\n\n"
 
         return Response(stream_with_context(generate()), mimetype="text/event-stream")

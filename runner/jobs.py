@@ -142,8 +142,18 @@ class JobRunner:
             if job.status.failed:
                 build.error = self._failure_reason(job_name)
                 return False
+            if build.stage == "testing" and self._test_container_done(job_name):
+                build.stage = "building"
             time.sleep(poll_interval)
         build.error = f"timed out waiting for {job_name}"
+        return False
+
+    def _test_container_done(self, job_name: str) -> bool:
+        pods = self.core.list_namespaced_pod(self.namespace, label_selector=f"job-name={job_name}")
+        for pod in pods.items:
+            for status in pod.status.init_container_statuses or []:
+                if status.name == "test" and status.state.terminated and status.state.terminated.exit_code == 0:
+                    return True
         return False
 
     def _failure_reason(self, job_name: str) -> str:
