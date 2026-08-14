@@ -1,0 +1,19 @@
+name: plan
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+jobs:
+  plan:
+    runs-on: [self-hosted]
+    steps:
+      - name: Sync repo checkout to this tag
+        run: |
+          git -C "$HOME/project/cluster-ci" fetch origin --tags
+
+      - name: Keep cluster-cli up to date
+        run: uv tool install --editable "$HOME/project/cluster-cli" --reinstall --quiet
+
+      - name: tofu plan
+        run: cluster-cli tofu cluster-ci --tag "${{ github.ref_name }}" plan
