@@ -6,33 +6,29 @@ from kubernetes import client, watch
 
 
 class JobRunner:
-    """Runs each build as two sequential Kubernetes Jobs with different
-    ServiceAccounts: build-push (test + Kaniko, zero cluster API access)
-    then deploy (`helm upgrade`, scoped Helm-capable RBAC). Kept as two Jobs
-    rather than one so the test/build container never holds Helm-capable
-    credentials."""
+    """Runs each build as a single Kubernetes Job (test + Kaniko build/push),
+    under a ServiceAccount with zero cluster API access , Kaniko only needs
+    registry credentials, not anything Kubernetes-shaped. Deploying (running
+    `helm upgrade` against the chart at ~/project/charts/<app>) happens
+    client-side afterward, via `cluster-cli deploy`/`build` , not here."""
 
     def __init__(
         self,
         *,
         namespace: str,
         kaniko_image: str,
-        helm_image: str,
         nexus_hostname: str,
         nexus_credentials_secret: str,
         workspace_pvc: str,
         build_service_account: str,
-        deploy_service_account: str,
         job_ttl_seconds: int,
     ):
         self.namespace = namespace
         self.kaniko_image = kaniko_image
-        self.helm_image = helm_image
         self.nexus_hostname = nexus_hostname
         self.nexus_credentials_secret = nexus_credentials_secret
         self.workspace_pvc = workspace_pvc
         self.build_service_account = build_service_account
-        self.deploy_service_account = deploy_service_account
         self.job_ttl_seconds = job_ttl_seconds
         self.batch = client.BatchV1Api()
         self.core = client.CoreV1Api()
@@ -41,14 +37,7 @@ class JobRunner:
         build.stage = "testing"
         build.build_job_name = f"build-{build.app_name}-{build.id}"
         self._submit_build_job(build)
-        if not self._wait_for_job(build.build_job_name, build):
-            build.status = "failed"
-            return
-
-        build.stage = "deploying"
-        build.deploy_job_name = f"deploy-{build.app_name}-{build.id}"
-        self._submit_deploy_job(build)
-        build.status = "succeeded" if self._wait_for_job(build.deploy_job_name, build) else "failed"
+        build.status = "succeeded" if self._wait_for_job(build.build_job_name, build) else "failed"
 
     def _submit_build_job(self, build) -> None:
         workspace_path = f"/workspace/{build.id}"
@@ -89,7 +78,7 @@ class JobRunner:
                                     f"--context=dir://{workspace_path}",
                                     f"--destination={self.nexus_hostname}/{build.app_name}:{build.tag}",
                                     f"--destination={self.nexus_hostname}/{build.app_name}:latest",
-                                    # Self-signed cert on the ingress-nginx side of registry.talos.lab —
+                                    # Self-signed cert on the ingress-nginx side of registry.talos.lab ,
                                     # same "accept self-signed on the LAN" pattern used elsewhere.
                                     "--skip-tls-verify",
                                 ],
@@ -144,58 +133,6 @@ class JobRunner:
         }
         self.batch.create_namespaced_job(self.namespace, manifest)
 
-    def _submit_deploy_job(self, build) -> None:
-        workspace_path = f"/workspace/{build.id}"
-        chart_path = f"{workspace_path}/charts/{build.app_name}"
-        manifest = {
-            "apiVersion": "batch/v1",
-            "kind": "Job",
-            "metadata": {
-                "name": build.deploy_job_name,
-                "namespace": self.namespace,
-                "labels": {"build-id": build.id, "role": "deploy"},
-            },
-            "spec": {
-                "backoffLimit": 0,
-                "ttlSecondsAfterFinished": self.job_ttl_seconds,
-                "template": {
-                    "metadata": {"labels": {"build-id": build.id, "role": "deploy"}},
-                    "spec": {
-                        "serviceAccountName": self.deploy_service_account,
-                        "restartPolicy": "Never",
-                        "containers": [
-                            {
-                                "name": "helm-upgrade",
-                                "image": self.helm_image,
-                                "command": ["helm"],
-                                # --reuse-values + only overriding image.tag confines drift
-                                # from Terraform's tracked state to that one field.
-                                "args": [
-                                    "upgrade",
-                                    build.app_name,
-                                    chart_path,
-                                    "--namespace",
-                                    build.namespace,
-                                    "--reuse-values",
-                                    "--set",
-                                    f"image.tag={build.tag}",
-                                ],
-                                "volumeMounts": [{"name": "workspace", "mountPath": "/workspace"}],
-                                "resources": {
-                                    "requests": {"cpu": "100m", "memory": "128Mi"},
-                                    "limits": {"cpu": "500m", "memory": "256Mi"},
-                                },
-                            }
-                        ],
-                        "volumes": [
-                            {"name": "workspace", "persistentVolumeClaim": {"claimName": self.workspace_pvc}},
-                        ],
-                    },
-                },
-            },
-        }
-        self.batch.create_namespaced_job(self.namespace, manifest)
-
     def _wait_for_job(self, job_name: str, build, poll_interval: float = 2.0, timeout: float = 900.0) -> bool:
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
@@ -220,18 +157,14 @@ class JobRunner:
         return "job failed"
 
     def tail_logs(self, build):
-        """Yields log lines across both Jobs' pods/containers in order, for the SSE endpoint."""
-        for job_name, containers in (
-            (build.build_job_name, ["test", "build-push"]),
-            (build.deploy_job_name, ["helm-upgrade"]),
-        ):
-            if job_name is None:
-                continue
-            pod_name = self._wait_for_pod(job_name)
-            if pod_name is None:
-                continue
-            for container in containers:
-                yield from self._stream_container_logs(pod_name, container)
+        """Yields log lines across the build Job's pod/containers in order, for the SSE endpoint."""
+        if build.build_job_name is None:
+            return
+        pod_name = self._wait_for_pod(build.build_job_name)
+        if pod_name is None:
+            return
+        for container in ["test", "build-push"]:
+            yield from self._stream_container_logs(pod_name, container)
 
     def _wait_for_pod(self, job_name: str, timeout: float = 60.0):
         deadline = time.monotonic() + timeout

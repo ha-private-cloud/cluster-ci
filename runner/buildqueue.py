@@ -11,10 +11,9 @@ class Build:
     tag: str
     namespace: str
     status: str = "queued"  # queued | running | succeeded | failed
-    stage: Optional[str] = None  # testing | building | deploying
+    stage: Optional[str] = None  # testing | building
     error: Optional[str] = None
     build_job_name: Optional[str] = None
-    deploy_job_name: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -30,7 +29,7 @@ class Build:
 
 class BuildQueue:
     """In-memory FIFO with a fixed pool of worker threads. Deliberately not
-    distributed/persistent — this is a single-user homelab runner, and state
+    distributed/persistent , this is a single-user homelab runner, and state
     living in one process's memory is why the Dockerfile runs gunicorn with
     a single worker process (multiple processes would each have their own
     queue and lose track of each other's builds)."""

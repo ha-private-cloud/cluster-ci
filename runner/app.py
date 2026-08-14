@@ -22,12 +22,10 @@ def create_app() -> Flask:
     job_runner = JobRunner(
         namespace=os.environ["NAMESPACE"],
         kaniko_image=os.environ["KANIKO_IMAGE"],
-        helm_image=os.environ["HELM_IMAGE"],
         nexus_hostname=os.environ["NEXUS_DOCKER_HOSTNAME"],
         nexus_credentials_secret=os.environ["NEXUS_CREDENTIALS_SECRET"],
         workspace_pvc=os.environ["WORKSPACE_PVC"],
         build_service_account=os.environ["BUILD_SERVICE_ACCOUNT"],
-        deploy_service_account=os.environ["DEPLOY_SERVICE_ACCOUNT"],
         job_ttl_seconds=int(os.environ["BUILD_JOB_TTL_SECONDS"]),
     )
     build_queue = BuildQueue(job_runner, max_concurrent=int(os.environ["MAX_CONCURRENT_BUILDS"]))

@@ -1,7 +1,7 @@
 # Backstop against runaway resource use. This is the first repo in the
 # project whose whole job is spawning ephemeral Jobs repeatedly (everything
 # else here is "apply once, long-running") and the first ResourceQuota
-# anywhere in the cluster — worker node talos-c94-oxe is already close to its
+# anywhere in the cluster , worker node talos-c94-oxe is already close to its
 # memory limit ceiling (it runs Nexus), so builds need a hard ceiling, not
 # just good intentions in the Job specs.
 resource "kubernetes_resource_quota" "ci" {

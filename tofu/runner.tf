@@ -27,7 +27,7 @@ resource "kubernetes_deployment_v1" "runner" {
         service_account_name = kubernetes_service_account.runner.metadata[0].name
 
         # Makes the NFS-backed build-workspace PVC writable by the runner's
-        # uid 1000 (appuser, see runner/Dockerfile) — same fix as
+        # uid 1000 (appuser, see runner/Dockerfile) , same fix as
         # cluster-auth/postgres.tf's fs_group, same underlying csi-driver-nfs
         # fsGroupPolicy=File mechanism.
         security_context {
@@ -59,11 +59,6 @@ resource "kubernetes_deployment_v1" "runner" {
           }
 
           env {
-            name  = "HELM_IMAGE"
-            value = var.helm_image
-          }
-
-          env {
             name  = "BUILD_JOB_TTL_SECONDS"
             value = tostring(var.build_job_ttl_seconds)
           }
@@ -76,11 +71,6 @@ resource "kubernetes_deployment_v1" "runner" {
           env {
             name  = "BUILD_SERVICE_ACCOUNT"
             value = kubernetes_service_account.build.metadata[0].name
-          }
-
-          env {
-            name  = "DEPLOY_SERVICE_ACCOUNT"
-            value = kubernetes_service_account.deploy.metadata[0].name
           }
 
           env {
@@ -193,7 +183,7 @@ resource "kubernetes_ingress_v1" "runner" {
     }
 
     # No secretName: falls back to ingress-nginx's default self-signed cert,
-    # same as registry.talos.lab/nexus.talos.lab — only auth.talos.lab needs
+    # same as registry.talos.lab/nexus.talos.lab , only auth.talos.lab needs
     # its own cert, because OIDC hostname verification has no skip-verify option.
     tls {
       hosts = [var.ci_hostname]
