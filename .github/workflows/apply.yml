@@ -13,7 +13,7 @@ jobs:
     runs-on: [self-hosted]
     steps:
       - name: Sync all repos
-        run: "$HOME/project/proxmox-tofu/scripts/sync-repos.sh"
+        run: sync-repos.sh
 
       - name: tofu apply
         run: cluster-cli tofu cluster-ci --tag "${{ inputs.tag }}" apply -auto-approve

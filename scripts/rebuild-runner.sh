@@ -7,7 +7,7 @@
 #   - KUBECONFIG pointing at the cluster
 #
 # Usage:
-#   ./scripts/rebuild-runner.sh v0.1.5
+#   rebuild-runner.sh v0.1.5
 
 set -euo pipefail
 
@@ -17,8 +17,7 @@ if [ $# -ne 1 ]; then
 fi
 
 VERSION="$1"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RUNNER_DIR="${SCRIPT_DIR}/../runner"
+RUNNER_DIR="${HOME}/project/cluster-ci/runner"  # fixed path, not relative to this script , see sync-repos.sh
 IMAGE="registry.talos.lab/ci-runner:${VERSION}"
 
 echo "==> Building ${IMAGE}"

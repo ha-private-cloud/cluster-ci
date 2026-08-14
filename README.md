@@ -14,7 +14,7 @@ deploy anything.
 2. **Create a dedicated Nexus push user.**
 3. **Build and push the runner's own bootstrap image**, from the bastion (see "Rebuilding the runner" below):
    ```sh
-   ./scripts/rebuild-runner.sh v0.1.0
+   rebuild-runner.sh v0.1.0
    ```
 
 ## Apply
@@ -42,7 +42,7 @@ Add `ci.talos.lab` to `/etc/hosts`, pointing at a worker node IP.
 `cluster-ci` builds every other app's image , but not its own (nothing can build the thing that runs the build pipeline). Whenever `runner/` changes, rebuild and redeploy it from the bastion:
 
 ```sh
-./scripts/rebuild-runner.sh v0.1.5
+rebuild-runner.sh v0.1.5
 ```
 
 Builds with `podman` directly against `registry.talos.lab` (rather than an in-cluster Kaniko Job , the bastion has no Pod Security Admission restrictions to route around in the first place), then updates the `ci-runner` Deployment and waits for rollout. Needs `~/.config/containers/auth.json` with push credentials , reuse the cluster's own Nexus push secret rather than creating a new one:
