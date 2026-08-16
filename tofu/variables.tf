@@ -74,3 +74,9 @@ variable "nexus_ci_password" {
   type        = string
   sensitive   = true
 }
+
+variable "ingress_tls_secret_name" {
+  description = "Shared TLS secret serving the runner ingress."
+  type        = string
+  default     = "clusterkeep-tls"
+}

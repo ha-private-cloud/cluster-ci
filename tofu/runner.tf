@@ -188,11 +188,9 @@ resource "kubernetes_ingress_v1" "runner" {
       }
     }
 
-    # No secretName: falls back to ingress-nginx's default self-signed cert,
-    # same as registry.talos.lab/nexus.talos.lab , only auth.talos.lab needs
-    # its own cert, because OIDC hostname verification has no skip-verify option.
     tls {
-      hosts = [var.ci_hostname]
+      hosts       = [var.ci_hostname]
+      secret_name = var.ingress_tls_secret_name
     }
   }
 }
