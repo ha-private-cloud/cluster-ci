@@ -157,6 +157,12 @@ resource "kubernetes_ingress_v1" "runner" {
   metadata {
     name      = "ci-runner"
     namespace = kubernetes_namespace.ci.metadata[0].name
+
+    annotations = {
+      "nginx.ingress.kubernetes.io/proxy-read-timeout" = "3600"
+      "nginx.ingress.kubernetes.io/proxy-send-timeout" = "3600"
+      "nginx.ingress.kubernetes.io/proxy-buffering"    = "off"
+    }
   }
 
   spec {
