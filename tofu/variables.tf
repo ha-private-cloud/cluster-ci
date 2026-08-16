@@ -13,13 +13,13 @@ variable "namespace" {
 variable "ci_hostname" {
   description = "Hostname the runner API will be served on via Ingress. Add this to your workstation's /etc/hosts pointing at a worker node IP, same as every other *.talos.lab host."
   type        = string
-  default     = "ci.talos.lab"
+  default     = "ci.clusterkeep.dev.net"
 }
 
 variable "runner_image" {
   description = "Image repository for the runner itself, pushed to Nexus like every other app's image."
   type        = string
-  default     = "registry.talos.lab/ci-runner"
+  default     = "registry.clusterkeep.dev.net/ci-runner"
 }
 
 variable "runner_image_tag" {
@@ -36,7 +36,7 @@ variable "runner_replicas" {
 variable "nexus_docker_hostname" {
   description = "Hostname for Nexus's docker-hosted repo connector (mirrors cluster-config's variable of the same name, duplicated here to avoid a remote-state read just for a hostname string)."
   type        = string
-  default     = "registry.talos.lab"
+  default     = "registry.clusterkeep.dev.net"
 }
 
 variable "kaniko_image" {
