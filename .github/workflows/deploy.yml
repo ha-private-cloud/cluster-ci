@@ -15,8 +15,8 @@ jobs:
     if: github.event_name == 'push'
     runs-on: [self-hosted]
     steps:
-      - name: Sync all repos
-        run: sync-repos.sh
+      - name: Sync repos
+        run: sync-repos.sh cluster-cli cluster-ci
 
       - name: tofu plan
         run: cluster-cli tofu cluster-ci --tag "${{ github.ref_name }}" plan
@@ -25,8 +25,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted]
     steps:
-      - name: Sync all repos
-        run: sync-repos.sh
+      - name: Sync repos
+        run: sync-repos.sh cluster-cli cluster-ci
 
       - name: tofu apply
         run: cluster-cli tofu cluster-ci --tag "${{ inputs.tag }}" apply -auto-approve
