@@ -18,8 +18,11 @@ jobs:
       - name: Sync repos
         run: sync-repos.sh cluster-cli cluster-ci
 
+      - name: tofu init
+        run: cluster-cli tofu cluster-ci --tag "${{ github.ref_name }}" init -input=false
+
       - name: tofu plan
-        run: cluster-cli tofu cluster-ci --tag "${{ github.ref_name }}" plan
+        run: cluster-cli tofu cluster-ci plan -input=false
 
   apply:
     if: github.event_name == 'workflow_dispatch'
@@ -28,5 +31,8 @@ jobs:
       - name: Sync repos
         run: sync-repos.sh cluster-cli cluster-ci
 
+      - name: tofu init
+        run: cluster-cli tofu cluster-ci --tag "${{ inputs.tag }}" init -input=false
+
       - name: tofu apply
-        run: cluster-cli tofu cluster-ci --tag "${{ inputs.tag }}" apply -auto-approve
+        run: cluster-cli tofu cluster-ci apply -auto-approve -input=false
