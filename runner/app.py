@@ -76,10 +76,7 @@ def create_app() -> Flask:
         def generate():
             for line in job_runner.tail_logs(build):
                 yield f"data: {line}\n\n"
-            # Container logs finish streaming the instant the last container
-            # exits, but the Job controller marks job.status.succeeded/failed
-            # a beat later , without this wait, a client reading "done" here
-            # can still see status="running" and wrongly report failure.
+            # Job status lags its logs; without this wait a finished build still reads as running.
             while build.status not in ("succeeded", "failed"):
                 time.sleep(0.5)
             yield f"event: done\ndata: {build.status}\n\n"

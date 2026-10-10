@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# Rebuilds and redeploys the ci-runner image.
-#
-# Requires:
-#   - podman
-#   - ~/.config/containers/auth.json with push creds for registry.talos.lab,
-#   - KUBECONFIG pointing at the cluster
-#
-# Usage:
-#   rebuild-runner.sh v0.1.5
-
 set -euo pipefail
 
 if [ $# -ne 1 ]; then
@@ -17,7 +7,7 @@ if [ $# -ne 1 ]; then
 fi
 
 VERSION="$1"
-RUNNER_DIR="${HOME}/project/cluster-ci/runner"  # fixed path, not relative to this script , see sync-repos.sh
+RUNNER_DIR="${HOME}/project/cluster-ci/runner"
 IMAGE="registry.talos.lab/ci-runner:${VERSION}"
 
 echo "==> Building ${IMAGE}"

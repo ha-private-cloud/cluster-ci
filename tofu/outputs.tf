@@ -1,10 +1,10 @@
 output "runner_url" {
-  description = "URL for the runner API once DNS/hosts is configured."
+  description = "URL of the runner API."
   value       = "https://${var.ci_hostname}"
 }
 
 output "runner_api_token" {
-  description = "Bearer token cluster-cli needs. Put it in ~/.config/cluster-cli/config.toml (see README)."
+  description = "Bearer token cluster-cli authenticates with."
   value       = random_password.runner_api_token.result
   sensitive   = true
 }

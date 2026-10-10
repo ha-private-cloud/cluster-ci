@@ -23,8 +23,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 5000
 
-# Single worker process: the build queue and in-memory build-status map live
-# in process memory (see README) , a second worker process would maintain
-# its own, disconnected copy of both. Threaded so log-streaming SSE
-# responses don't block build submission/status polling.
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "8", "--worker-class", "gthread", "app:app"]

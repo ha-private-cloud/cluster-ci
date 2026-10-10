@@ -6,11 +6,7 @@ from kubernetes import client, watch
 
 
 class JobRunner:
-    """Runs each build as a single Kubernetes Job (test + Kaniko build/push),
-    under a ServiceAccount with zero cluster API access , Kaniko only needs
-    registry credentials, not anything Kubernetes-shaped. Deploying (running
-    `helm upgrade` against the chart at ~/project/charts/<app>) happens
-    client-side afterward, via `cluster-cli deploy`/`build` , not here."""
+    """Runs each build as a single Kubernetes Job: pytest, then a Kaniko build and push."""
 
     def __init__(
         self,
@@ -78,8 +74,6 @@ class JobRunner:
                                     f"--context=dir://{workspace_path}",
                                     f"--destination={self.nexus_hostname}/{build.app_name}:{build.tag}",
                                     f"--destination={self.nexus_hostname}/{build.app_name}:latest",
-                                    # Self-signed cert on the ingress-nginx side of registry.talos.lab ,
-                                    # same "accept self-signed on the LAN" pattern used elsewhere.
                                     "--skip-tls-verify",
                                 ],
                                 "volumeMounts": [
@@ -98,14 +92,10 @@ class JobRunner:
                                 "name": "docker-config",
                                 "secret": {
                                     "secretName": self.nexus_credentials_secret,
-                                    # Kaniko needs the file literally named config.json under
-                                    # /kaniko/.docker; the Secret stores it as .dockerconfigjson.
                                     "items": [{"key": ".dockerconfigjson", "path": "config.json"}],
                                 },
                             },
                         ],
-                        # Steer builds away from talos-c94-oxe, which already runs Nexus and
-                        # sits close to its memory limit ceiling.
                         "affinity": {
                             "podAntiAffinity": {
                                 "preferredDuringSchedulingIgnoredDuringExecution": [

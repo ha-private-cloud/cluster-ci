@@ -1,5 +1,3 @@
-# The runner's own identity: creates/watches build Jobs and reads their
-# pods' logs to stream back to cluster-cli. Scoped to its own namespace only.
 resource "kubernetes_service_account" "runner" {
   metadata {
     name      = "ci-runner"
@@ -19,9 +17,6 @@ resource "kubernetes_role" "runner" {
     verbs      = ["create", "get", "list", "watch", "delete"]
   }
 
-  # Kubernetes RBAC treats subresources as distinct resource names , the
-  # rule above doesn't implicitly cover jobs/status, which the client needs
-  # to poll a Job's completion state.
   rule {
     api_groups = ["batch"]
     resources  = ["jobs/status"]
@@ -60,9 +55,6 @@ resource "kubernetes_role_binding" "runner" {
   }
 }
 
-# Identity for the test+build+push Job. Deliberately granted zero Kubernetes
-# API permissions , it only runs pytest and Kaniko (a registry push, not a
-# k8s API call), so it never needs to touch the cluster API at all.
 resource "kubernetes_service_account" "build" {
   metadata {
     name      = "ci-build"

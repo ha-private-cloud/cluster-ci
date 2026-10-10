@@ -26,10 +26,6 @@ resource "kubernetes_deployment_v1" "runner" {
       spec {
         service_account_name = kubernetes_service_account.runner.metadata[0].name
 
-        # Makes the NFS-backed build-workspace PVC writable by the runner's
-        # uid 1000 (appuser, see runner/Dockerfile) , same fix as
-        # cluster-auth/postgres.tf's fs_group, same underlying csi-driver-nfs
-        # fsGroupPolicy=File mechanism.
         security_context {
           fs_group = 1000
         }

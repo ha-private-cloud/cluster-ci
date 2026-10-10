@@ -14,8 +14,6 @@ def save_upload(build_id: str, file_storage) -> Path:
 
 
 def _safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
-    # tarfile.extractall follows member paths as-is; reject anything that
-    # would escape `dest` (e.g. "../../etc/passwd") before extracting.
     dest_resolved = dest.resolve()
     for member in tar.getmembers():
         member_path = (dest / member.name).resolve()

@@ -10,8 +10,8 @@ class Build:
     app_name: str
     tag: str
     namespace: str
-    status: str = "queued"  # queued | running | succeeded | failed
-    stage: Optional[str] = None  # testing | building
+    status: str = "queued"
+    stage: Optional[str] = None
     error: Optional[str] = None
     build_job_name: Optional[str] = None
 
@@ -28,11 +28,7 @@ class Build:
 
 
 class BuildQueue:
-    """In-memory FIFO with a fixed pool of worker threads. Deliberately not
-    distributed/persistent , this is a single-user homelab runner, and state
-    living in one process's memory is why the Dockerfile runs gunicorn with
-    a single worker process (multiple processes would each have their own
-    queue and lose track of each other's builds)."""
+    """In-memory FIFO with a fixed pool of worker threads."""
 
     def __init__(self, job_runner, max_concurrent: int = 1):
         self._job_runner = job_runner
