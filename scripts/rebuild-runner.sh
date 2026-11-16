@@ -2,24 +2,32 @@
 set -euo pipefail
 
 if [ $# -ne 1 ]; then
-  echo "usage: $0 <version-tag>  (e.g. v0.1.5)" >&2
+  echo "usage: $0 <release-tag>  (e.g. v0.2.0)" >&2
   exit 1
 fi
 
-VERSION="$1"
-RUNNER_DIR="${HOME}/project/cluster-ci/runner"
-IMAGE="registry.talos.lab/ci-runner:${VERSION}"
+TAG="$1"
+REPO="${HOME}/project/cluster-ci"
+REGISTRY="${REGISTRY:-registry.clusterkeep.dev.net}"
+IMAGE="${REGISTRY}/ci-runner:${TAG}"
+KUBECONFIG="${KUBECONFIG:-${HOME}/project/proxmox-tofu/_out/kubeconfig}"
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "${WORK}"' EXIT
+chmod 700 "${WORK}"
+
+echo "==> Taking runner/ from ${TAG}"
+git -C "${REPO}" fetch --quiet --tags --force origin
+git -C "${REPO}" archive "${TAG}" runner | tar -x -C "${WORK}"
+
+echo "==> Reading the CI push credentials from the cluster"
+kubectl --kubeconfig "${KUBECONFIG}" get secret nexus-ci-push-credentials -n ci \
+  -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d > "${WORK}/auth.json"
 
 echo "==> Building ${IMAGE}"
-podman build -t "${IMAGE}" "${RUNNER_DIR}"
+podman build -t "${IMAGE}" "${WORK}/runner"
 
 echo "==> Pushing ${IMAGE}"
-podman push --tls-verify=false "${IMAGE}"
+podman push --authfile "${WORK}/auth.json" --tls-verify=false "${IMAGE}"
 
-echo "==> Updating the ci-runner Deployment"
-kubectl set image deployment/ci-runner "runner=${IMAGE}" -n ci
-kubectl rollout status deployment/ci-runner -n ci --timeout=120s
-
-echo "==> Done , ${IMAGE} is live. Verify:"
-echo "      kubectl get pods -n ci -l app=ci-runner -o jsonpath='{.items[0].spec.containers[0].image}'"
-echo "      curl -sk https://ci.talos.lab/healthz"
+echo "==> ${IMAGE} pushed. Apply cluster-ci with runner_image_tag=${TAG} to deploy it."

@@ -11,9 +11,22 @@ on:
         type: string
 
 jobs:
+  runner-image:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: [self-hosted]
+    steps:
+      - name: Sync repos
+        run: sync-repos.sh cluster-cli cluster-ci
+
+      - name: Build and push the runner image
+        run: rebuild-runner.sh "${{ github.ref_name }}"
+
   deploy:
+    needs: runner-image
+    if: ${{ !failure() && !cancelled() }}
     uses: ha-private-cloud/pipelines/.github/workflows/tofu-deploy.yml@main
     with:
       repo: cluster-ci
       tag: ${{ inputs.tag || github.ref_name }}
       apply: ${{ github.event_name == 'workflow_dispatch' }}
+      tofu_args: -var runner_image_tag=${{ inputs.tag || github.ref_name }}
