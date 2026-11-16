@@ -11,6 +11,12 @@ REPO="${HOME}/project/cluster-ci"
 REGISTRY="${REGISTRY:-registry.clusterkeep.dev.net}"
 IMAGE="${REGISTRY}/ci-runner:${TAG}"
 KUBECONFIG="${KUBECONFIG:-${HOME}/project/proxmox-tofu/_out/kubeconfig}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+if [ ! -w "${XDG_RUNTIME_DIR}" ]; then
+  echo "${XDG_RUNTIME_DIR} isn't writable. Run 'sudo loginctl enable-linger $(id -un)' once on this machine." >&2
+  exit 1
+fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
