@@ -59,6 +59,11 @@ class JobRunner:
                                 "image": "ghcr.io/astral-sh/uv:python3.13-bookworm-slim",
                                 "workingDir": workspace_path,
                                 "command": ["sh", "-c", "uv sync --locked && uv run pytest"],
+                                "securityContext": {"runAsUser": 1000, "runAsGroup": 1000},
+                                "env": [
+                                    {"name": "HOME", "value": "/tmp"},
+                                    {"name": "UV_CACHE_DIR", "value": "/tmp/uv-cache"},
+                                ],
                                 "volumeMounts": [{"name": "workspace", "mountPath": "/workspace"}],
                                 "resources": {
                                     "requests": {"cpu": "250m", "memory": "256Mi"},

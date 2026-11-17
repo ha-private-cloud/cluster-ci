@@ -27,7 +27,8 @@ resource "kubernetes_deployment_v1" "runner" {
         service_account_name = kubernetes_service_account.runner.metadata[0].name
 
         security_context {
-          fs_group = 1000
+          fs_group               = 1000
+          fs_group_change_policy = "OnRootMismatch"
         }
 
         container {
