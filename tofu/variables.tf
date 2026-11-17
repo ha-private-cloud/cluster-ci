@@ -60,7 +60,7 @@ variable "build_job_ttl_seconds" {
 variable "max_concurrent_builds" {
   description = "How many builds the runner runs at once."
   type        = number
-  default     = 1
+  default     = 3
 }
 
 variable "nexus_ci_username" {
