@@ -1,0 +1,46 @@
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /runner
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: Chore
+    groups:
+      uv:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: docker
+    directory: /runner
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: Chore
+    groups:
+      docker:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: opentofu
+    directory: /tofu
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: Chore
+    groups:
+      opentofu:
+        update-types:
+          - minor
+          - patch
