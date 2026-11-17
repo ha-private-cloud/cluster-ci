@@ -58,16 +58,21 @@ class JobRunner:
                                 "name": "test",
                                 "image": "ghcr.io/astral-sh/uv:python3.13-bookworm-slim",
                                 "workingDir": workspace_path,
-                                "command": ["sh", "-c", "uv sync --locked && uv run pytest"],
+                                "command": ["sh", "-c", "uv sync --locked && uv run pytest -p no:cacheprovider"],
                                 "securityContext": {"runAsUser": 1000, "runAsGroup": 1000},
                                 "env": [
                                     {"name": "HOME", "value": "/tmp"},
-                                    {"name": "UV_CACHE_DIR", "value": "/tmp/uv-cache"},
+                                    {"name": "UV_CACHE_DIR", "value": "/scratch/uv-cache"},
+                                    {"name": "UV_PROJECT_ENVIRONMENT", "value": "/scratch/venv"},
+                                    {"name": "PYTHONPYCACHEPREFIX", "value": "/scratch/pycache"},
                                 ],
-                                "volumeMounts": [{"name": "workspace", "mountPath": "/workspace"}],
+                                "volumeMounts": [
+                                    {"name": "workspace", "mountPath": "/workspace"},
+                                    {"name": "scratch", "mountPath": "/scratch"},
+                                ],
                                 "resources": {
-                                    "requests": {"cpu": "250m", "memory": "256Mi"},
-                                    "limits": {"cpu": "500m", "memory": "512Mi"},
+                                    "requests": {"cpu": "500m", "memory": "256Mi"},
+                                    "limits": {"cpu": "1", "memory": "512Mi"},
                                 },
                             }
                         ],
@@ -93,6 +98,7 @@ class JobRunner:
                         ],
                         "volumes": [
                             {"name": "workspace", "persistentVolumeClaim": {"claimName": self.workspace_pvc}},
+                            {"name": "scratch", "emptyDir": {"sizeLimit": "2Gi"}},
                             {
                                 "name": "docker-config",
                                 "secret": {
