@@ -11,7 +11,7 @@ RUN uv sync --locked --no-install-project --no-dev
 COPY app.py auth.py buildqueue.py jobs.py storage.py ./
 RUN uv sync --locked --no-dev
 
-FROM python:3.13-slim-bookworm
+FROM python:3.15-slim-bookworm
 
 RUN useradd --create-home --uid 1000 appuser
 WORKDIR /app
